@@ -1,0 +1,188 @@
+import React, { Component } from 'react';
+import './../assets/style.css';
+import _ from 'lodash';
+
+ var routes = [
+    {
+        line: '',
+        stations: [
+            {
+                name: '',
+                hours: []
+            }
+        ]
+    }
+];
+ var stations = [];
+ var uniqS = [];
+
+class MainPage extends Component {
+    constructor() {
+        super();
+        this.state = {
+            currentIndex: 0,
+            currentStation: '',
+            currentLine: 1,
+            activeStations: [],
+        }
+        // this.showStation = this.showStation.bind(this);
+    }
+    componentDidMount(){
+        var reqFolders = require.context('./../data/', true, /json/);
+        reqFolders.keys().forEach(function (key) {
+            var keySplit = key.split('./');
+            var rawNameLine = keySplit[1].split('/');
+            setTimeout(function () {
+                var station1 = require("./../data/" + keySplit[1]);
+                var arrTime = [];
+                for (let j = 0; j < station1.hours.length; j++) {
+                    if (station1.hours[j].h === "Ora" || station1.hours[j].h === "") {
+                        j++;
+                    }
+                    for (let i = 0; i < station1.hours[j].min.length; i = i + 2) {
+                        var hour = station1.hours[j].h + ":" + station1.hours[j].min[i] + station1.hours[j].min[i + 1];
+                        arrTime.push(hour);
+                    }
+                }
+                let firstSplit = key.split('./');
+                let fullStation = firstSplit[1].split(".json");
+                let fullName = fullStation[0].split("/");
+                var nameStation = key[1].split(".json");
+                stations.push(fullName[1])
+                routes.push({
+                    line: rawNameLine[0],
+                    stations: {
+                        name: fullName[1],
+                        hours: arrTime
+                    }
+                })
+            }, 300);
+        })
+        setTimeout(() => {
+            uniqS = _.uniq(stations);
+            console.log(uniqS);
+            this.setState({ uniqS, stations, routes, loading: 1 });
+        }, 1000);
+        console.log(routes);
+    }
+    pushStations(index){
+        this.state.currentIndex = this.state.currentIndex + index;
+        if(this.state.currentIndex === -1){
+            this.state.currentIndex = this.state.uniqS.length-1;
+        }else if(this.state.currentIndex === this.state.uniqS.length-1){
+            this.state.currentIndex = 0;
+        }
+        console.log(this.state.currentIndex);
+            document.getElementById('backStation').innerHTML = uniqS[this.state.currentIndex - 1];
+            document.getElementById('textStation').innerHTML = uniqS[this.state.currentIndex];
+            document.getElementById('nextStation').innerHTML = uniqS[this.state.currentIndex + 1];       
+        console.log(routes);        
+        var arrTemp = []
+        for(let i=1;i<routes.length;i++){
+            var routeString = (routes[i].stations.name.toString()).replace(/ /g, "");
+            var uniqsString = (uniqS[this.state.currentIndex].toString()).replace(/ /g, "");
+            if (routeString === uniqsString){
+                arrTemp.push(routes[i]);
+            }
+        }
+        this.state.activeStations = arrTemp;
+        console.log(this.state.activeStations);
+        if (this.state.activeStations.length > 2) {
+        document.getElementById('backLine').innerHTML = this.state.activeStations[Math.floor(this.state.activeStations.length / 2) - 1 ].line;
+        }
+        document.getElementById('textLine').innerHTML = this.state.activeStations[Math.floor(this.state.activeStations.length / 2)].line;
+        if(this.state.activeStations.length > 2){
+            document.getElementById('nextLine').innerHTML = this.state.activeStations[Math.floor(this.state.activeStations.length / 2)+1].line;
+        }
+        this.state.currentLine = Math.floor(this.state.activeStations.length / 2);
+    }
+    pushLines(index){
+        this.state.currentLine = this.state.currentLine + index;
+        if (this.state.currentLine < 0) {
+            this.state.currentLine = this.state.activeStations.length - 1;
+            document.getElementById('backLine').innerHTML = this.state.activeStations[this.state.activeStations.length - 1].line;
+
+        } else if (this.state.currentLine === this.state.activeStations.length ) {
+            this.state.currentLine = 0;
+            document.getElementById('nextLine').innerHTML = this.state.activeStations[0].line;   
+        }
+        console.log(this.state.currentLine);
+        document.getElementById('nextLine').innerHTML = this.state.activeStations[this.state.currentLine+1].line;
+        document.getElementById('textLine').innerHTML = this.state.activeStations[this.state.currentLine].line;
+        console.log(this.state.activeStations[this.state.currentLine].line);
+        // document.getElementById('backLine').innerHTML = this.state.activeStations[this.state.currentLine+1].line;
+    }
+    
+    showData() {
+        if (this.state.loading === 1) {
+            return (
+                <div>
+                    <div className="container-fluid  text-center" style={{ minHeight: 100 + "vh" }}>
+                        <div className="row align-items-center" style={{ minHeight: 100 + "vh" }}>
+                            <div className="col-md-6 mx-auto" >
+                                <h2 id="backStation"> {this.state.uniqS[0]} </h2>
+                                <button onClick={this.pushStations.bind(this, -1)}>Back</button><br />
+                                <h2 id="textStation"> {this.state.uniqS[1]}</h2>
+                                <button onClick={this.pushStations.bind(this, 1)}>Next</button>
+                                <h2 id="nextStation"> {this.state.uniqS[2]}</h2>
+                            </div>
+                            <div className="col-md-6 mx-auto align-items-center">
+
+                                <div className="row">
+                                    <div className="col-md-4">
+
+                                        <h2 id="backLine"></h2>
+
+                                    </div>
+                                    <div className="col-md-4">
+
+                                        <button onClick={this.pushLines.bind(this, -1)}>Back</button><br />
+                                        <h2 id="textLine" class="inLineText"></h2>
+                                        <button onClick={this.pushLines.bind(this, 1)}>Next</button><br />
+
+                                    </div>
+                                    <div className="col-md-4">
+
+                                        <h2 id="nextLine"></h2>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            )
+        } else {
+            return (
+                <div className="spinner">
+                    <svg viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle className="length" fill="none" strokeWidth="8" strokeLinecap="round" cx="33" cy="33" r="28"></circle>
+                    </svg>
+                    <svg viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle fill="none" strokeWidth="8" strokeLinecap="round" cx="33" cy="33" r="28"></circle>
+                    </svg>
+                    <svg viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle fill="none" strokeWidth="8" strokeLinecap="round" cx="33" cy="33" r="28"></circle>
+                    </svg>
+                    <svg viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle fill="none" strokeWidth="8" strokeLinecap="round" cx="33" cy="33" r="28"></circle>
+                    </svg>
+                </div>
+            )
+        }
+    }
+    render() {
+        return (
+            <div className="wh100">
+                <div className="posCenter">
+                    {this.showData()}
+                </div>
+            </div>
+        );
+    }
+}
+
+export default MainPage;
